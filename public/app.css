@@ -1,0 +1,153 @@
+/* 基金配置工作台 - 样式 */
+:root{--accent:#4f46e5;--green:#16a34a;--red:#dc2626;--gray:#64748b;--bg:#f0f2f5;--card-bg:#ffffff;--border:#e2e8f0;--text:#1e293b;--text-muted:#94a3b8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);padding:16px}
+.container{max-width:900px;margin:0 auto}
+
+/* ===== 登录页 ===== */
+.login-wrap{max-width:380px;margin:12vh auto;background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.login-wrap h1{font-size:1.2rem;text-align:center;color:var(--accent);margin-bottom:6px}
+.login-wrap .sub{font-size:.78rem;color:var(--text-muted);text-align:center;margin-bottom:22px}
+.login-wrap input{width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none}
+.login-wrap input:focus{border-color:var(--accent)}
+.login-wrap button{width:100%;margin-top:14px;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;min-height:44px}
+.login-wrap button:hover{background:#4338ca}
+.login-err{background:#fef2f2;color:#dc2626;border-radius:8px;padding:8px 12px;font-size:.8rem;margin-top:12px;display:none}
+
+/* ===== 顶栏 ===== */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.topbar h1{font-size:1.1rem;color:var(--accent)}
+.topbar .right{display:flex;align-items:center;gap:10px}
+.topbar .uname{font-size:.78rem;color:var(--text-muted)}
+.btn-mini{padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:.78rem;cursor:pointer;color:var(--text)}
+.btn-mini:hover{background:#f1f5f9}
+
+/* ===== 筛选区 ===== */
+.panel{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.panel-title{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:10px}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filter-row select,.filter-row input{flex:1;min-width:120px;padding:9px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;background:#fff}
+.filter-row select:focus,.filter-row input:focus{border-color:var(--accent)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tab{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:.78rem;cursor:pointer;color:var(--text);background:#fff;font-weight:500}
+.tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary{padding:10px 26px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px}
+.btn-primary:hover{background:#4338ca}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-success{padding:12px 28px;background:#059669;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;min-height:48px;width:100%}
+.btn-success:hover{background:#047857}
+.btn-success:disabled{opacity:.5;cursor:not-allowed}
+
+/* ===== 结果列表 ===== */
+.res-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f1f5f9}
+.res-item:last-child{border-bottom:none}
+.res-item .info{min-width:0}
+.res-item .name{font-size:.86rem;font-weight:600}
+.res-item .meta{font-size:.72rem;color:var(--text-muted);margin-top:2px}
+.res-item .add{padding:5px 14px;background:#ede9fe;color:#5b21b6;border:none;border-radius:8px;font-size:.75rem;cursor:pointer;font-weight:600;flex-shrink:0}
+.res-item .add:hover{background:#ddd6fe}
+.res-item .add.on{background:#dcfce7;color:#166534}
+.res-more{text-align:center;margin-top:10px}
+.res-empty{text-align:center;color:var(--text-muted);font-size:.8rem;padding:18px 0}
+
+/* ===== 已选列表 ===== */
+.sel-list{display:flex;flex-wrap:wrap;gap:8px}
+.sel-chip{display:inline-flex;align-items:center;gap:6px;background:#dbeafe;color:#1e40af;border-radius:20px;padding:5px 12px;font-size:.78rem;font-weight:600}
+.sel-chip .x{cursor:pointer;opacity:.6;font-size:12px}
+.sel-chip .x:hover{opacity:1}
+.sel-empty{color:var(--text-muted);font-size:.78rem}
+
+/* ===== 组合总览 ===== */
+.po-wrap{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.po-title{font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--accent)}
+.po-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.po-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:600}
+.po-tag.blue{background:#dbeafe;color:#1e40af}
+.po-tag.purple{background:#ede9fe;color:#5b21b6}
+.po-tag.green{background:#dcfce7;color:#166534}
+.po-tag.amber{background:#fef3c7;color:#92400e}
+.po-tag.pink{background:#fce7f3;color:#be185d}
+.po-strategy{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.po-strategy .item{padding:8px 16px;border-radius:10px;font-size:.8rem}
+.po-strategy .item .num{font-size:1rem;font-weight:700}
+.po-review{background:#f8fafc;border-radius:10px;padding:12px 16px;font-size:.8rem;line-height:1.7}
+
+/* ===== 基金卡片 ===== */
+.fund-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px}
+.card-summary{padding:15px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;transition:background .15s}
+.card-summary:hover{background:#f1f5f9}
+.summary-left{flex:1;min-width:0}
+.fund-name{font-size:1rem;font-weight:700}
+.fund-name .code{font-weight:400;color:var(--text-muted);font-size:.8rem;margin-left:6px}
+.fund-tags{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.73rem;font-weight:600}
+.tag.type{background:#ede9fe;color:#5b21b6}
+.tag.ret-pos{background:#fce7f3;color:#be185d}
+.tag.ret-neg{background:#dcfce7;color:#166534}
+.tag.pos-core{background:#dbeafe;color:#1e40af}
+.tag.pos-sat{background:#ede9fe;color:#5b21b6}
+.tag.pos-opp{background:#fef3c7;color:#92400e}
+.summary-right{text-align:right;flex-shrink:0;min-width:100px}
+.verdict-large{font-size:.92rem;font-weight:700;margin-bottom:2px}
+.expand-icon{font-size:.72rem;color:var(--text-muted)}
+.card-detail{display:none;border-top:1px solid var(--border);padding:16px 20px 20px}
+.card-detail.open{display:block}
+.sec-title{font-size:.78rem;font-weight:700;color:var(--accent);margin:14px 0 5px;padding-bottom:3px;border-bottom:2px solid #e0e7ff}
+.sec-title:first-child{margin-top:0}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 18px;font-size:.8rem;line-height:1.65}
+.info-grid .label{color:var(--text-muted)}
+.info-grid .value{font-weight:500}
+.mgr-inline{grid-column:1/-1;background:#f8fafc;border-radius:6px;padding:7px 12px;margin-top:2px;font-size:.78rem;line-height:1.65;display:flex;flex-wrap:wrap;gap:3px 14px}
+.mgr-inline .label{color:var(--text-muted)}
+.tag-change{display:inline-block;padding:1px 7px;border-radius:8px;font-size:.71rem;font-weight:600}
+.tag-change.no{background:#dcfce7;color:#166534}
+.tag-change.yes{background:#fee2e2;color:#991b1b}
+.fee-grid{grid-column:1/-1;background:#f8fafc;border:1px dashed var(--border);border-radius:6px;padding:6px 12px;margin-top:2px;font-size:.76rem;line-height:1.6}
+.fee-grid .fee-item{display:inline-block;margin-right:14px}
+.fee-grid .fee-label{color:var(--text-muted)}
+.reason-box{background:#f5f3ff;border-left:3px solid #8b5cf6;border-radius:0 8px 8px 0;padding:10px 14px;margin-top:4px;font-size:.8rem;line-height:1.75}
+.reason-box .reason-item{margin-bottom:6px}
+.reason-box .reason-item:last-child{margin-bottom:0}
+.reason-box .r-label{font-weight:700;color:#5b21b6}
+.chart-wrap{height:155px;margin-top:4px}
+.chart-empty{background:#f8fafc;border:1px dashed var(--border);border-radius:8px;padding:28px;text-align:center;color:var(--text-muted);font-size:.76rem;margin-top:4px}
+.perf-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:4px}
+.perf-table th{background:#f1f5f9;padding:5px 8px;text-align:center;font-weight:600;color:var(--text-muted);font-size:.72rem}
+.perf-table td{padding:4px 8px;text-align:center;border-bottom:1px solid #f1f5f9}
+.pos{color:var(--red);font-weight:600}
+.neg{color:var(--green);font-weight:600}
+.tag-q{display:inline-block;padding:1px 6px;border-radius:10px;font-size:.68rem;font-weight:600}
+.tag-q.bull{background:#fce7f3;color:#be185d}
+.tag-q.neutral{background:#fef9c3;color:#854d0e}
+.tag-q.bear{background:#dcfce7;color:#166534}
+.mdd-warn{background:#fef2f2;border-left:3px solid var(--red);border-radius:0 6px 6px 0;padding:8px 12px;font-size:.76rem;color:#991b1b;margin-top:6px;line-height:1.6}
+.holding-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:4px}
+.holding-table th{background:#f1f5f9;padding:4px 8px;text-align:center;font-weight:600;color:var(--text-muted);font-size:.72rem}
+.holding-table th:first-child{text-align:left}
+.holding-table td{padding:4px 8px;text-align:center;border-bottom:1px solid #f1f5f9;font-size:.76rem}
+.holding-table td:first-child{text-align:left;font-weight:500}
+.quote-box{background:#fefce8;border-left:3px solid #eab308;padding:8px 12px;border-radius:0 6px 6px 0;font-size:.78rem;line-height:1.6;color:#713f12;margin-top:4px}
+.note-box{background:#f0f9ff;border-radius:6px;padding:5px 10px;font-size:.72rem;color:#1e40af;margin-top:5px;line-height:1.5}
+.footer{margin-top:24px;text-align:center;font-size:.7rem;color:var(--text-muted);line-height:1.7}
+.loading{text-align:center;color:var(--text-muted);font-size:.85rem;padding:28px}
+
+/* ===== 移动端适配 ===== */
+@media(max-width:640px){
+  body{padding:10px}
+  .info-grid{grid-template-columns:1fr}
+  .filter-row{flex-direction:column}
+  .filter-row select,.filter-row input{width:100%}
+  .card-summary{flex-direction:column;align-items:flex-start}
+  .summary-right{text-align:left}
+}
+
+/* ===== 打印样式（PDF导出） ===== */
+@media print{
+  body{background:#fff;padding:0}
+  .topbar,.filter-area,.sel-area,.gen-area,.footer,.btn-mini{display:none}
+  .po-wrap,.fund-card,.card-detail,.sec-title,.reason-box,.chart-wrap,.perf-table,.holding-table,.mdd-warn,.quote-box{page-break-inside:avoid}
+  .fund-card{margin-bottom:10px}
+  .card-detail{display:block !important}
+  .card-summary{background:#f8fafc}
+  .chart-wrap{height:170px}
+}

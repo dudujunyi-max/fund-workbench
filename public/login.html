@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>基金配置工作台 · 登录</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="container">
+  <div class="login-wrap">
+    <h1>🏦 基金配置工作台</h1>
+    <p class="sub">请输入访问口令 · 内部使用</p>
+    <input id="pw" type="password" placeholder="访问口令" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">进入工作台</button>
+    <div id="err" class="login-err"></div>
+  </div>
+</div>
+<script>
+async function doLogin(){
+  const pw=document.getElementById('pw').value;
+  const err=document.getElementById('err');
+  if(!pw){err.textContent='请输入口令';err.style.display='block';return;}
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    const d=await r.json();
+    if(d.token){
+      localStorage.setItem('wb_token',d.token);
+      location.href='index.html';
+    }else{
+      err.textContent=d.error||'登录失败';
+      err.style.display='block';
+    }
+  }catch(e){err.textContent='网络错误，请重试';err.style.display='block';}
+}
+</script>
+</body>
+</html>
