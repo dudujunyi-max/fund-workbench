@@ -78,14 +78,17 @@ async function addByCode() {
   input.focus();
 }
 
-// ===== 搜索（代码/关键词 + 分类多选 + 公司多选 组合筛选）=====
+// ===== 搜索（关键词 + 分类/公司/规模/成立/申购 多选组合筛选）=====
 async function doSearch(page) {
   curMode = 'search'; curPage = page || 1;
   const q = document.getElementById('fQ').value.trim();
   const cats = [...selCats].join(',');
   const comps = [...selComps].join(',');
+  const scales = [...selScales].join(',');
+  const ages = [...selAges].join(',');
+  const buyable = [...selBuy][0] || '';
   try {
-    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cats)}&company=${encodeURIComponent(comps)}&page=${curPage}&size=30`);
+    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cats)}&company=${encodeURIComponent(comps)}&scales=${encodeURIComponent(scales)}&ages=${encodeURIComponent(ages)}&buyable=${encodeURIComponent(buyable)}&page=${curPage}&size=30`);
     renderRes(d);
   } catch (e) { showResErr(e.message); }
 }
@@ -151,10 +154,21 @@ function toggleSel(code, name, type) {
 }
 function clearSel() { selected.clear(); renderSel(); }
 
-// ===== 多选筛选：分类 chips + 公司搜索 =====
+// ===== 多选筛选：分类 chips + 公司搜索 + 规模/成立/申购 =====
 let selCats = new Set();       // 已选分类
 let selComps = new Set();      // 已选公司（核心词）
+let selScales = new Set();     // 已选规模分档
+let selAges = new Set();       // 已选成立时长分档
+let selBuy = new Set();        // 已选申购状态
 let _allComps = [];            // 全部公司（用于本地搜索建议）
+
+function toggleMore() {
+  const box = document.getElementById('moreFilter');
+  const on = box.style.display !== 'none';
+  box.style.display = on ? 'none' : 'block';
+  const a = document.querySelector('.more-toggle .arrow');
+  if (a) a.textContent = on ? '▾' : '▴';
+}
 
 function initMultiFilter() {
   // 分类 chips 点击切换多选
@@ -163,6 +177,17 @@ function initMultiFilter() {
       const cat = ch.dataset.cat;
       if (selCats.has(cat)) { selCats.delete(cat); ch.classList.remove('on'); }
       else { selCats.add(cat); ch.classList.add('on'); }
+      doSearch(1);
+    };
+  });
+  // 规模/成立时长/申购状态 chips（多选）
+  const groups = { scale: selScales, age: selAges, buy: selBuy };
+  document.querySelectorAll('#moreFilter .tabs[data-g] .chip').forEach(ch => {
+    ch.onclick = () => {
+      const set = groups[ch.parentElement.dataset.g];
+      const v = ch.dataset.v;
+      if (set.has(v)) { set.delete(v); ch.classList.remove('on'); }
+      else { set.add(v); ch.classList.add('on'); }
       doSearch(1);
     };
   });

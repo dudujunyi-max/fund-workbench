@@ -44,8 +44,8 @@ app.get('/api/companies',auth.requireAuth,async(req,res)=>{
 app.get('/api/search',auth.requireAuth,async(req,res)=>{
   try{
     const list=await fundlist.load();
-    const{q='',cat='',company='',page=1,size=30}=req.query;
-    const r=fundlist.search(list,q,cat,company,parseInt(page),Math.min(parseInt(size)||30,100));
+    const{q='',cat='',company='',page=1,size=30,scales='',ages='',buyable=''}=req.query;
+    const r=await fundlist.search(list,q,cat,company,parseInt(page),Math.min(parseInt(size)||30,100),{scales,ages,buyable});
     res.json(r);
   }catch(e){res.status(502).json({error:'搜索失败：'+e.message});}
 });
