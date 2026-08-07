@@ -6,14 +6,25 @@ let rankSc = '1nzf', rankFt = 'all';
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 
-async function api(path, opts = {}) {
-  const headers = Object.assign({ 'Authorization': 'Bearer ' + getToken() }, opts.headers || {});
-  if (opts.body) headers['Content-Type'] = 'application/json';
-  const r = await fetch(path, Object.assign({}, opts, { headers }));
-  if (r.status === 401) { location.href = 'login.html'; throw new Error('未登录'); }
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.error || '请求失败');
-  return d;
+// 带自动重试的请求封装（网络抖动/服务瞬断自动重试，缓解"无数据"）
+async function api(path, opts = {}, retries = 2) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const headers = Object.assign({ 'Authorization': 'Bearer ' + getToken() }, opts.headers || {});
+      if (opts.body) headers['Content-Type'] = 'application/json';
+      const r = await fetch(path, Object.assign({}, opts, { headers }));
+      if (r.status === 401) { location.href = 'login.html'; throw new Error('未登录'); }
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || '请求失败');
+      return d;
+    } catch (e) {
+      lastErr = e;
+      if (e.message === '未登录') throw e;
+      if (attempt < retries) await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 function logout() { localStorage.removeItem(TOKEN_KEY); location.href = 'login.html'; }
