@@ -50,38 +50,31 @@ async function init() {
       doRank(1);
     };
   });
-  addCodeRow(); // 默认一行代码输入
   doSearch(1);
 }
 
-// ===== 代码输入区（支持多只，加号添加） =====
-function addCodeRow() {
-  const box = document.getElementById('codeRows');
-  const row = document.createElement('div');
-  row.className = 'code-row';
-  row.innerHTML = `<input class="code-input" placeholder="6位基金代码，如 001065" maxlength="6" inputmode="numeric"
-    onkeydown="if(event.key==='Enter')joinCode(this)"
-    onblur="if(this.value.trim())joinCode(this)">
-    <span class="code-del" onclick="this.parentElement.remove()">✕</span>`;
-  box.appendChild(row);
-  row.querySelector('input').focus();
-}
-
-// 每个输入框独立防重入（不再全局互斥，多行可同时录入）
-async function joinCode(input) {
+// ===== 代码输入：单输入框 + 添加按钮 =====
+let _adding = false;
+async function addByCode() {
+  const input = document.getElementById('codeInput');
   const code = (input.value || '').trim();
   if (!code) return;
-  if (!/^\d{6}$/.test(code)) { input.value = ''; return; } // 非6位数字：静默清空，不弹窗打断
-  if (input.dataset.joining === '1') return;
-  input.dataset.joining = '1';
+  if (!/^\d{6}$/.test(code)) { input.value = ''; input.focus(); return; }
+  if (_adding) return;
+  _adding = true;
   input.disabled = true;
+  const btn = input.nextElementSibling;
+  const oldTxt = btn ? btn.textContent : '';
+  if (btn) btn.textContent = '查询中…';
   try {
     const d = await api('/api/fund', { method: 'POST', body: JSON.stringify({ code }) });
-    if (!selected.has(code)) { selected.set(code, { code, name: d.name || code, type: d.type || '' }); renderSel(); }
+    if (selected.has(code)) { }
+    else { selected.set(code, { code, name: d.name || code, type: d.type || '' }); renderSel(); }
     input.value = '';
   } catch (e) { input.value = ''; }
   input.disabled = false;
-  delete input.dataset.joining;
+  if (btn) btn.textContent = oldTxt;
+  _adding = false;
   input.focus();
 }
 
@@ -97,16 +90,17 @@ async function doSearch(page) {
   } catch (e) { showResErr(e.message); }
 }
 
-// ===== 排名（按窗口；分类多选时映射为全部市场）=====
+// ===== 排名（按窗口；所选区间收益率直接展示在列表）=====
 async function doRank(page) {
   curMode = 'rank'; curPage = page || 1;
   // rankhandler 大类映射（指数/股票/混合/债券/QDII/FOF；货币与商品不参与涨跌幅排名）
   const FT_MAP = { '指数型': 'zs', '股票型': 'gp', '混合型': 'hh', '债券型': 'zq', 'QDII': 'qdii', 'FOF': 'fof' };
   const cats = [...selCats];
   rankFt = cats.length === 1 ? (FT_MAP[cats[0]] || 'all') : 'all';
+  const scLabel = ({ '1yzf': '近1月', '3yzf': '近3月', '1nzf': '近1年', '2nzf': '近2年', '3nzf': '近3年' })[rankSc] || '近1年';
   try {
     const d = await api(`/api/rank?sc=${rankSc}&ft=${rankFt}&page=${curPage}&size=50`);
-    const list = d.list.map((x, i) => ({ code: x.code, name: x.name, type: 'rank', ret: x.returns, rank: x.rank }));
+    const list = d.list.map((x, i) => ({ code: x.code, name: x.name, type: 'rank', ret: x.returns, rank: x.rank, scLabel }));
     renderRes({ total: d.allNum, list, isRank: true });
   } catch (e) { showResErr(e.message); }
 }
@@ -121,13 +115,26 @@ function renderRes(d) {
   if (!d.list.length) { box.innerHTML = '<div class="res-empty">未找到匹配基金</div>'; moreBtn.style.display = 'none'; return; }
   box.innerHTML = d.list.map(x => {
     const on = selected.has(x.code);
-    const retTag = x.ret ? `<span class="tag ${String(x.ret).startsWith('-') ? 'ret-neg' : 'ret-pos'}">${esc(x.ret)}${x.ret !== '—' ? '%' : ''}</span>` : '';
+    const isRank = !!d.isRank;
+    // 排名模式：所选区间收益率醒目展示（红涨绿跌，中国习惯）
+    let retHtml = '';
+    let metaHtml = '';
+    if (isRank) {
+      const rv = String(x.ret == null ? '' : x.ret);
+      const up = rv !== '' && rv !== '—' && !rv.startsWith('-');
+      const down = rv !== '' && rv !== '—' && rv.startsWith('-');
+      if (rv && rv !== '—') retHtml = `<div class="res-ret ${up ? 'up' : down ? 'down' : ''}">${up ? '+' : ''}${esc(rv)}%</div>`;
+      metaHtml = `${x.scLabel || '区间'}收益率 · 第${x.rank}名`;
+    } else {
+      metaHtml = esc(x.type);
+    }
     return `<div class="res-item">
       <div class="info">
-        <div class="name">${esc(x.name)}<span style="color:var(--text-muted);font-weight:400;font-size:.72rem;margin-left:4px">${x.code}</span></div>
-        <div class="meta">${esc(x.type === 'rank' ? '业绩排名' : x.type)}${x.rank ? ` · 第${x.rank}名` : ''}</div>
+        <div class="name">${esc(x.name)}<span class="res-code">${x.code}</span></div>
+        <div class="meta">${metaHtml}</div>
       </div>
-      <button class="add ${on ? 'on' : ''}" onclick="toggleSel('${x.code}','${esc(x.name).replace(/'/g, "\\'")}','${esc(x.type === 'rank' ? '' : x.type)}')">${on ? '已选 ✓' : '加入'}</button>
+      ${retHtml}
+      <button class="add ${on ? 'on' : ''}" onclick="toggleSel('${x.code}','${esc(x.name).replace(/'/g, "\\'")}','${esc(isRank ? '' : x.type)}')">${on ? '已选 ✓' : '加入'}</button>
     </div>`;
   }).join('');
   moreBtn.style.display = d.total > curPage * 50 ? 'block' : 'none';

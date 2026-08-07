@@ -24,11 +24,14 @@
 
       <!-- 左栏：代码输入 + 筛选 + 结果列表 -->
       <div class="wb-left">
-        <!-- 代码输入区（支持多只） -->
+        <!-- 代码输入区（单个输入 + 添加按钮） -->
         <div class="panel">
           <div class="panel-title">🔢 输入基金代码</div>
-          <div id="codeRows"></div>
-          <button class="btn-mini" style="margin-top:8px" onclick="addCodeRow()">＋ 再输入一只</button>
+          <div class="filter-row">
+            <input id="codeInput" placeholder="6位基金代码，如 001065" maxlength="6" inputmode="numeric" onkeydown="if(event.key==='Enter')addByCode()">
+            <button class="btn-primary" onclick="addByCode()">添加</button>
+          </div>
+          <div style="font-size:.7rem;color:var(--text-muted)">输入代码点「添加」或按回车，基金将加入右侧「已选基金」</div>
         </div>
 
         <!-- 筛选/搜索 -->
