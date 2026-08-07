@@ -57,6 +57,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 .res-more{text-align:center;margin-top:10px}
 .res-empty{text-align:center;color:var(--text-muted);font-size:.8rem;padding:18px 0}
 
+/* 持仓增减配标签 */
+.op-tag{display:inline-block;padding:1px 8px;border-radius:8px;font-size:.72rem;font-weight:600}
+.op-tag.pos{background:#fce7f3;color:#be185d}
+.op-tag.neg{background:#dcfce7;color:#166534}
+.op-tag.hold{background:#f1f5f9;color:#64748b}
+.op-tag.new{background:#fef3c7;color:#92400e}
+
 /* 移动端底部固定生成栏 */
 .mobile-gen{display:none;position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-top:1px solid var(--border);padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:100;box-shadow:0 -2px 12px rgba(16,24,40,.06)}
 

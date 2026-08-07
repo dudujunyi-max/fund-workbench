@@ -26,6 +26,13 @@ const mddShade = {
     ctx.setLineDash([]);
     ctx.beginPath(); ctx.arc(p1.x, p1.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#dc2626'; ctx.fill();
     ctx.beginPath(); ctx.arc(p2.x, p2.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#16a34a'; ctx.fill();
+    // 图上文字标注：最大回撤区间
+    const label = data.mddLabel || '最大回撤区间';
+    ctx.fillStyle = 'rgba(220,38,38,.9)';
+    ctx.font = 'bold 10px -apple-system, "PingFang SC", sans-serif';
+    ctx.textAlign = 'left';
+    const labelY = Math.max(top + 12, p1.y - 10);
+    ctx.fillText('▼ ' + label, p1.x + 6, labelY);
     ctx.restore();
   }
 };
@@ -97,9 +104,10 @@ function registerCharts(d) {
       if (pi >= 0) peakIdx = pi;
       if (ti >= 0) troughIdx = ti;
       // 业绩图窗口：近1年
+      const mddL = rm.maxDrawdown ? '最大回撤 ' + Math.abs(parseFloat(rm.maxDrawdown)).toFixed(1) + '%' : '最大回撤区间';
       chartsData['nav_' + code] = chartBase({
         labels: win.map(s => { const dd = new Date(s.x); return (dd.getMonth() + 1) + '/' + dd.getDate(); }),
-        peakIdx, troughIdx,
+        peakIdx, troughIdx, mddLabel: mddL,
         datasets: [{
           label: '单位净值', data: win.map(s => s.y), borderColor: '#4f46e5',
           backgroundColor: 'rgba(79,70,229,.06)', fill: true, tension: .25,
@@ -109,8 +117,9 @@ function registerCharts(d) {
       chartsData['nav_' + code].plugins = ['mddShade'];
       return;
     }
+    const mddL2 = rm.maxDrawdown ? '最大回撤 ' + Math.abs(parseFloat(rm.maxDrawdown)).toFixed(1) + '%' : '最大回撤区间';
     chartsData['nav_' + code] = chartBase({
-      labels, peakIdx, troughIdx,
+      labels, peakIdx, troughIdx, mddLabel: mddL2,
       datasets: [{
         label: '单位净值', data: values, borderColor: '#4f46e5',
         backgroundColor: 'rgba(79,70,229,.06)', fill: true, tension: .25,

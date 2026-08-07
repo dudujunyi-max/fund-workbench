@@ -133,19 +133,68 @@ function renderCard(d) {
     ${mddNote}
     <table class="perf-table"><thead><tr><th>周期</th><th>收益率</th><th>同类平均</th><th>最大回撤</th><th>排名</th><th>四分位</th></tr></thead><tbody>${rows}</tbody></table>`;
 
-  // 持仓
+  // 持仓（含上期权重 + 增减配操作）
   const holds = d.holdings || [];
-  const holdRows = holds.length ? holds.map((h, i) =>
-    `<tr><td style="width:26px;color:#9ca3af">${i + 1}</td><td>${esc(h.name)}</td><td>${h.code ? esc(h.code) : '—'}</td><td style="color:var(--red);font-weight:600">${(h.pct || 0).toFixed(2)}%</td></tr>`).join('')
-    : `<tr><td colspan="4" style="color:#9ca3af;padding:10px;text-align:center">暂无股票持仓数据</td></tr>`;
+  const hasPrev = !!d.hasPrevHoldings;
+  const holdRows = holds.length ? holds.map((h, i) => {
+    let op = '—', opCls = '';
+    const cur = h.pct || 0, prev = h.prevPct;
+    if (hasPrev && prev != null) {
+      const diff = cur - prev;
+      if (diff > 0.01) { op = '增持'; opCls = 'pos'; }
+      else if (diff < -0.01) { op = '减持'; opCls = 'neg'; }
+      else { op = '维持'; opCls = 'hold'; }
+    } else if (hasPrev && prev == null) { op = '新进'; opCls = 'new'; }
+    return `<tr><td style="width:26px;color:#9ca3af">${i + 1}</td><td>${esc(h.name)}</td><td>${h.code ? esc(h.code) : '—'}</td>
+      <td style="color:var(--up);font-weight:700">${cur.toFixed(2)}%</td>
+      <td>${hasPrev && prev != null ? prev.toFixed(2) + '%' : '—'}</td>
+      <td><span class="op-tag ${opCls}">${op}</span></td></tr>`;
+  }).join('')
+    : `<tr><td colspan="6" style="color:#9ca3af;padding:10px;text-align:center">暂无股票持仓数据</td></tr>`;
   const hc = d.holdingsClassified || {};
   const hcTags = (hc.equityPct > 0 || hc.fixedIncomePct > 0) ? `<div style="margin-bottom:5px"><span class="tag type">权益 ${hc.equityPct || 0}%</span> <span class="tag type" style="background:#dcfce7;color:#166534">固收 ${hc.fixedIncomePct || 0}%</span></div>` : '';
   const holdSec = holds.length ? `<div class="sec-title">🔍 持仓明细${d.holdQuarter ? '（' + esc(d.holdQuarter) + '）' : ''}</div>${hcTags}
-    <table class="holding-table"><thead><tr><th>#</th><th>股票名称</th><th>代码</th><th>占净值</th></tr></thead><tbody>${holdRows}</tbody></table>` : '';
+    <table class="holding-table"><thead><tr><th>#</th><th>股票名称</th><th>代码</th><th>占净值</th><th>上期权重</th><th>操作</th></tr></thead><tbody>${holdRows}</tbody></table>` : '';
+
+  // 报告期视角（由业绩/持仓/回撤数据自动生成，替代人工季报观点）
+  const quoteSec = buildQuarterView(d);
 
   // 配置建议（旧版文本）
   const adviceSec = d.configAdvice ? `<div class="sec-title">💡 配置建议</div><div class="note-box">${esc(d.configAdvice)}</div>` : '';
 
-  const detail = `<div class="card-detail">${info}${reasonSec}${scaleSec}${perfSec}${holdSec}${adviceSec}</div>`;
+  const detail = `<div class="card-detail">${info}${reasonSec}${scaleSec}${perfSec}${holdSec}${quoteSec}${adviceSec}</div>`;
   return `<div class="fund-card">${summary}${detail}</div>`;
+}
+
+// 报告期视角：由业绩/持仓/回撤数据自动生成一段季度观察（替代人工季报观点）
+function buildQuarterView(d) {
+  const parts = [];
+  const perf = d.perf || [];
+  const p3m = perf.find(x => x.period === '近3月');
+  const p1y = perf.find(x => x.period === '近1年');
+  // 业绩
+  if (p3m && p3m.returns && p3m.avg) {
+    const r = parseFloat(p3m.returns) || 0, a = parseFloat(p3m.avg) || 0;
+    const diff = r - a;
+    parts.push(`近3月收益率${r >= 0 ? '+' : ''}${r.toFixed(2)}%，${diff >= 0 ? '跑赢' : '跑输'}同类平均${Math.abs(diff).toFixed(2)}个百分点${p3m.quartile ? `（同类${p3m.quartile}）` : ''}`);
+  }
+  if (p1y && p1y.returns && p1y.avg) {
+    const r = parseFloat(p1y.returns) || 0, a = parseFloat(p1y.avg) || 0;
+    const diff = r - a;
+    parts.push(`近1年${diff >= 0 ? '跑赢' : '跑输'}同类${Math.abs(diff).toFixed(2)}个百分点（${p1y.quartile || '—'}）`);
+  }
+  // 持仓变动
+  const holds = d.holdings || [];
+  if (holds.length && d.hasPrevHoldings) {
+    const adds = holds.filter(h => h.prevPct != null && (h.pct - h.prevPct) > 0.01).slice(0, 3).map(h => h.name);
+    const news = holds.filter(h => h.prevPct == null).slice(0, 2).map(h => h.name);
+    if (adds.length) parts.push(`本季度主要增持：${adds.join('、')}`);
+    if (news.length) parts.push(`新进前十大：${news.join('、')}`);
+  }
+  // 回撤
+  const rm = d.riskMetrics || {};
+  if (rm.maxDrawdown) parts.push(`历史最大回撤${Math.abs(parseFloat(rm.maxDrawdown)).toFixed(1)}%`);
+  if (!parts.length) return '';
+  return `<div class="sec-title">📝 报告期视角</div><div class="quote-box">${esc(parts.join('；'))}。</div>
+  <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px">※ 由业绩/持仓/回撤数据自动生成；基金经理季报原文可查基金公告</div>`;
 }
