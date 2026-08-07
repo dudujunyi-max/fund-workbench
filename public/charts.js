@@ -90,36 +90,17 @@ function registerCharts(d) {
   }
   const nv = d.navTrend || [];
   if (nv.length > 5) {
+    // 业绩图：全历史净值，直接使用后端返回的峰值/谷底索引标注历史最大回撤
     const labels = nv.map(s => { const dd = new Date(s.x); return (dd.getMonth() + 1) + '/' + dd.getDate(); });
     const values = nv.map(s => s.y);
-    let peakIdx = null, troughIdx = null;
     const rm = d.riskMetrics || {};
-    if (rm.peakDate) {
-      // 用峰值/谷底日期在近1年窗口内定位索引（简化：用全序列最后1年）
-      const start = nv.length > 250 ? nv.length - 250 : 0;
-      const win = nv.slice(start);
-      const pKey = new Date(rm.peakDate).getTime(), tKey = new Date(rm.troughDate).getTime();
-      const pi = win.findIndex(s => Math.abs(s.x - pKey) < 86400000);
-      const ti = win.findIndex(s => Math.abs(s.x - tKey) < 86400000);
-      if (pi >= 0) peakIdx = pi;
-      if (ti >= 0) troughIdx = ti;
-      // 业绩图窗口：近1年
-      const mddL = rm.maxDrawdown ? '最大回撤 ' + Math.abs(parseFloat(rm.maxDrawdown)).toFixed(1) + '%' : '最大回撤区间';
-      chartsData['nav_' + code] = chartBase({
-        labels: win.map(s => { const dd = new Date(s.x); return (dd.getMonth() + 1) + '/' + dd.getDate(); }),
-        peakIdx, troughIdx, mddLabel: mddL,
-        datasets: [{
-          label: '单位净值', data: win.map(s => s.y), borderColor: '#4f46e5',
-          backgroundColor: 'rgba(79,70,229,.06)', fill: true, tension: .25,
-          pointRadius: 0, pointHoverRadius: 4, pointBackgroundColor: '#4f46e5'
-        }]
-      });
-      chartsData['nav_' + code].plugins = ['mddShade'];
-      return;
+    let peakIdx = null, troughIdx = null;
+    if (rm.peakIdx != null && rm.troughIdx != null && rm.peakIdx < rm.troughIdx && rm.troughIdx < nv.length) {
+      peakIdx = rm.peakIdx; troughIdx = rm.troughIdx;
     }
-    const mddL2 = rm.maxDrawdown ? '最大回撤 ' + Math.abs(parseFloat(rm.maxDrawdown)).toFixed(1) + '%' : '最大回撤区间';
+    const mddL = rm.maxDrawdown ? '最大回撤 ' + Math.abs(parseFloat(rm.maxDrawdown)).toFixed(1) + '%' : '最大回撤区间';
     chartsData['nav_' + code] = chartBase({
-      labels, peakIdx, troughIdx, mddLabel: mddL2,
+      labels, peakIdx, troughIdx, mddLabel: mddL,
       datasets: [{
         label: '单位净值', data: values, borderColor: '#4f46e5',
         backgroundColor: 'rgba(79,70,229,.06)', fill: true, tension: .25,
