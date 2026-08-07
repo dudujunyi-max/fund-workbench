@@ -131,9 +131,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 .footer{margin-top:24px;text-align:center;font-size:.7rem;color:var(--text-muted);line-height:1.7}
 .loading{text-align:center;color:var(--text-muted);font-size:.85rem;padding:28px}
 
+/* ===== 工作台双栏布局 ===== */
+.wb-main{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
+.wb-right{position:sticky;top:12px}
+.sel-panel{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+/* 代码输入区 */
+.code-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.code-row:last-child{margin-bottom:0}
+.code-input{flex:1;padding:9px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;min-width:0}
+.code-input:focus{border-color:var(--accent)}
+.code-del{cursor:pointer;color:var(--text-muted);font-size:14px;padding:4px 6px;flex-shrink:0}
+.code-del:hover{color:var(--red)}
+
 /* ===== 移动端适配 ===== */
 @media(max-width:640px){
   body{padding:10px}
+  .wb-main{grid-template-columns:1fr}
+  .wb-right{position:static;order:-1}
   .info-grid{grid-template-columns:1fr}
   .filter-row{flex-direction:column}
   .filter-row select,.filter-row input{width:100%}

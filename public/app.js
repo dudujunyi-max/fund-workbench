@@ -45,7 +45,40 @@ async function init() {
       doRank(1);
     };
   });
+  addCodeRow(); // 默认一行代码输入
   doSearch(1);
+}
+
+// ===== 代码输入区（支持多只，加号添加） =====
+function addCodeRow() {
+  const box = document.getElementById('codeRows');
+  const row = document.createElement('div');
+  row.className = 'code-row';
+  row.innerHTML = `<input class="code-input" placeholder="6位基金代码，如 001065" maxlength="6" inputmode="numeric"
+    onkeydown="if(event.key==='Enter')joinCode(this)"
+    onblur="if(this.value.trim())joinCode(this)">
+    <span class="code-del" onclick="this.parentElement.remove()">✕</span>`;
+  box.appendChild(row);
+  row.querySelector('input').focus();
+}
+
+let _joining = false; // 防重入（Enter/失焦双触发）
+async function joinCode(input) {
+  if (_joining) return;
+  const code = (input.value || '').trim();
+  if (!code) return;
+  if (!/^\d{6}$/.test(code)) { input.value = ''; alert('请输入 6 位数字基金代码'); return; }
+  _joining = true;
+  input.disabled = true;
+  try {
+    const d = await api('/api/fund', { method: 'POST', body: JSON.stringify({ code }) });
+    if (selected.has(code)) { alert('该基金已在已选列表中'); }
+    else { selected.set(code, { code, name: d.name || code, type: d.type || '' }); renderSel(); }
+    input.value = '';
+  } catch (e) { alert('未找到该基金代码，请检查'); }
+  input.disabled = false;
+  _joining = false;
+  input.focus();
 }
 
 // ===== 搜索（代码/关键词 + 分类 + 公司 组合筛选）=====
@@ -115,16 +148,29 @@ function renderSel() {
   box.innerHTML = selected.size ? [...selected.values()].map(s =>
     `<span class="sel-chip">${esc(s.name)}<span class="x" onclick="toggleSel('${s.code}','${esc(s.name).replace(/'/g, "\\'")}','${esc(s.type)}')">✕</span></span>`).join('')
     : '<span class="sel-empty">尚未选择基金</span>';
-  btn.textContent = `🎯 生成配置建议（已选 ${selected.size} 只）`;
+  btn.textContent = `🎯 生成报告${selected.size ? `（${selected.size} 只）` : ''}`;
   btn.disabled = selected.size === 0;
 }
 
-// ===== 生成配置建议 =====
+// ===== 视图切换：工作台 <-> 报告页 =====
+function showReportView() {
+  document.getElementById('wbView').style.display = 'none';
+  document.getElementById('reportView').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+function backToWorkbench() {
+  document.getElementById('reportView').style.display = 'none';
+  document.getElementById('wbView').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+// ===== 生成报告（进入报告视图） =====
 async function generate() {
   const codes = [...selected.keys()];
   if (!codes.length) return;
   const out = document.getElementById('out');
   const loading = document.getElementById('loading');
+  showReportView();
   loading.style.display = 'block';
   out.innerHTML = '';
   try {
@@ -137,8 +183,8 @@ async function generate() {
     // 注册图表数据
     fundsData.forEach(fd => registerCharts(fd));
     out.innerHTML = renderOverview(fundsData) + ok.map(f => renderCard(f.data)).join('') +
-      (bad.length ? `<div class="res-empty">以下基金获取失败：${bad.map(b => b.code).join('、')}（请重新选择）</div>` : '');
-    window.scrollTo({ top: document.getElementById('out').offsetTop - 80, behavior: 'smooth' });
+      (bad.length ? `<div class="res-empty">以下基金获取失败：${bad.map(b => b.code).join('、')}（请返回重新选择）</div>` : '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     loading.style.display = 'none';
     out.innerHTML = `<div class="res-empty">${esc(e.message)}</div>`;

@@ -18,45 +18,66 @@
     </div>
   </div>
 
-  <!-- 筛选/搜索 -->
-  <div class="panel filter-area">
-    <div class="panel-title">🔍 选择基金</div>
-    <div class="filter-row">
-      <input id="fQ" placeholder="输入基金代码 / 名称关键词，如：001065 或 红利" onkeydown="if(event.key==='Enter')doSearch(1)">
+  <!-- ===== 工作台视图 ===== -->
+  <div id="wbView">
+    <div class="wb-main">
+
+      <!-- 左栏：代码输入 + 筛选 + 结果列表 -->
+      <div class="wb-left">
+        <!-- 代码输入区（支持多只） -->
+        <div class="panel">
+          <div class="panel-title">🔢 输入基金代码</div>
+          <div id="codeRows"></div>
+          <button class="btn-mini" style="margin-top:8px" onclick="addCodeRow()">＋ 再输入一只</button>
+        </div>
+
+        <!-- 筛选/搜索 -->
+        <div class="panel filter-area">
+          <div class="panel-title">🔍 按条件筛选</div>
+          <div class="filter-row">
+            <input id="fQ" placeholder="名称 / 拼音 / 代码关键词，如：红利" onkeydown="if(event.key==='Enter')doSearch(1)">
+          </div>
+          <div class="filter-row">
+            <select id="fType"><option value="">全部分类</option></select>
+            <select id="fCompany"><option value="">全部基金公司</option></select>
+            <button class="btn-primary" onclick="doSearch(1)">筛选</button>
+          </div>
+          <div class="panel-title" style="margin-top:4px">📈 按业绩排名排序</div>
+          <div class="tabs" id="rankTabs">
+            <span class="tab" data-sc="1yzf">近1月</span>
+            <span class="tab" data-sc="3yzf">近3月</span>
+            <span class="tab on" data-sc="1nzf">近1年</span>
+            <span class="tab" data-sc="2nzf">近2年</span>
+            <span class="tab" data-sc="3nzf">近3年</span>
+          </div>
+          <div id="resList"><div class="res-empty">输入代码加入，或按分类/公司/关键词筛选、点排名窗口看榜单，点「加入」放入右侧已选。</div></div>
+          <div class="res-more"><button class="btn-mini" id="moreBtn" style="display:none" onclick="loadMore()">加载更多</button></div>
+        </div>
+      </div>
+
+      <!-- 右栏：已选小窗口 -->
+      <div class="wb-right">
+        <div class="panel sel-panel">
+          <div class="panel-title">✅ 已选基金 <span id="selCount" style="color:var(--text-muted);font-weight:400"></span>
+            <span style="float:right"><button class="btn-mini" onclick="clearSel()">清空</button></span>
+          </div>
+          <div class="sel-list" id="selList"><span class="sel-empty">尚未选择基金</span></div>
+          <button class="btn-success" id="genBtn" style="margin-top:12px" onclick="generate()">🎯 生成报告</button>
+          <div style="font-size:.7rem;color:var(--text-muted);margin-top:8px;text-align:center">抓取天天基金数据生成「重点基金配置建议」报告，约 5-20 秒</div>
+        </div>
+      </div>
+
     </div>
-    <div class="filter-row">
-      <select id="fType"><option value="">全部分类</option></select>
-      <select id="fCompany"><option value="">全部基金公司</option></select>
-      <button class="btn-primary" onclick="doSearch(1)">筛选</button>
-    </div>
-    <div class="panel-title" style="margin-top:4px">📈 按业绩排名排序</div>
-    <div class="tabs" id="rankTabs">
-      <span class="tab" data-sc="1yzf">近1月</span>
-      <span class="tab" data-sc="3yzf">近3月</span>
-      <span class="tab on" data-sc="1nzf">近1年</span>
-      <span class="tab" data-sc="2nzf">近2年</span>
-      <span class="tab" data-sc="3nzf">近3年</span>
-    </div>
-    <div id="resList"><div class="res-empty">输入代码或关键词，选择分类/公司后点「筛选」；或点击上方排名窗口看业绩榜单。点击「加入」选入下方列表。</div></div>
-    <div class="res-more"><button class="btn-mini" id="moreBtn" style="display:none" onclick="loadMore()">加载更多</button></div>
   </div>
 
-  <!-- 已选 -->
-  <div class="panel sel-area">
-    <div class="panel-title">✅ 已选基金 <span id="selCount" style="color:var(--text-muted);font-weight:400"></span>
-      <span style="float:right"><button class="btn-mini" onclick="clearSel()">清空</button></span>
+  <!-- ===== 报告视图（生成后进入） ===== -->
+  <div id="reportView" style="display:none">
+    <div style="margin-bottom:12px">
+      <button class="btn-mini" onclick="backToWorkbench()">← 返回继续选基金</button>
+      <span style="margin-left:10px;font-size:.85rem;color:var(--text-muted)">重点基金配置建议</span>
     </div>
-    <div class="sel-list" id="selList"><span class="sel-empty">尚未选择基金</span></div>
+    <div id="out"><div class="loading" id="loading" style="display:none">⏳ 正在获取数据并生成报告…</div></div>
   </div>
-
-  <!-- 生成 -->
-  <div class="panel gen-area">
-    <button class="btn-success" id="genBtn" onclick="generate()">🎯 生成配置建议（已选 N 只）</button>
-    <div style="font-size:.72rem;color:var(--text-muted);margin-top:6px;text-align:center">每只基金实时抓取天天基金数据，含费率、净值、回撤、持仓与推荐理由，约需 5-20 秒</div>
-  </div>
-
-  <!-- 输出 -->
-  <div id="out"><div class="loading" id="loading" style="display:none">⏳ 正在获取数据并生成卡片…</div></div>
 
   <div class="footer">数据来源：天天基金网 · 业绩/排名截至查询日 · 本工具仅供内部参考，不构成投资建议</div>
 </div>
