@@ -28,15 +28,24 @@ app.post('/api/logout',(req,res)=>{
 app.get('/api/me',auth.requireAuth,(req,res)=>res.json({ok:true}));
 
 app.get('/api/types',auth.requireAuth,async(req,res)=>{
-  try{const list=await fundlist.load();res.json({types:fundlist.types(list)});}
+  try{await fundlist.load();res.json({types:fundlist.types()});}
   catch(e){res.status(502).json({error:'基金类型加载失败：'+e.message});}
+});
+
+app.get('/api/companies',auth.requireAuth,async(req,res)=>{
+  try{
+    const c=await fundlist.loadCompanies();
+    // 展示核心词（去"基金/管理/有限"等后缀），去重、按长度倒序
+    const uniq=[...new Set(c.map(n=>fundlist.companyCore(n)).filter(Boolean))].sort((a,b)=>b.length-a.length);
+    res.json({companies:uniq});
+  }catch(e){res.status(502).json({error:'基金公司加载失败：'+e.message});}
 });
 
 app.get('/api/search',auth.requireAuth,async(req,res)=>{
   try{
     const list=await fundlist.load();
-    const{q='',type='',page=1,size=30}=req.query;
-    const r=fundlist.search(list,q,type,parseInt(page),Math.min(parseInt(size)||30,100));
+    const{q='',cat='',company='',page=1,size=30}=req.query;
+    const r=fundlist.search(list,q,cat,company,parseInt(page),Math.min(parseInt(size)||30,100));
     res.json(r);
   }catch(e){res.status(502).json({error:'搜索失败：'+e.message});}
 });

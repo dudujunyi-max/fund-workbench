@@ -28,7 +28,13 @@ async function init() {
   try {
     const d = await api('/api/types');
     const sel = document.getElementById('fType');
-    sel.innerHTML = '<option value="">全部类型</option>' + d.types.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    sel.innerHTML = '<option value="">全部分类</option>' + d.types.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  } catch (e) {}
+  // 基金公司下拉
+  try {
+    const d = await api('/api/companies');
+    const sel = document.getElementById('fCompany');
+    sel.innerHTML = '<option value="">全部基金公司</option>' + d.companies.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
   } catch (e) {}
   // 排名 tabs
   document.querySelectorAll('#rankTabs .tab').forEach(t => {
@@ -42,21 +48,25 @@ async function init() {
   doSearch(1);
 }
 
-// ===== 搜索 =====
+// ===== 搜索（代码/关键词 + 分类 + 公司 组合筛选）=====
 async function doSearch(page) {
   curMode = 'search'; curPage = page || 1;
   const q = document.getElementById('fQ').value.trim();
-  const type = document.getElementById('fType').value;
+  const cat = document.getElementById('fType').value;
+  const company = document.getElementById('fCompany').value;
   try {
-    const d = await api(`/api/search?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&page=${curPage}&size=30`);
+    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cat)}&company=${encodeURIComponent(company)}&page=${curPage}&size=30`);
     renderRes(d);
   } catch (e) { showResErr(e.message); }
 }
 
-// ===== 排名 =====
+// ===== 排名（按窗口，沿用当前分类/公司过滤）=====
 async function doRank(page) {
   curMode = 'rank'; curPage = page || 1;
-  rankFt = document.getElementById('fFt').value;
+  // rankhandler 大类映射（指数/股票/混合/债券/QDII/FOF；货币与商品不参与涨跌幅排名）
+  const FT_MAP = { '指数型': 'zs', '股票型': 'gp', '混合型': 'hh', '债券型': 'zq', 'QDII': 'qdii', 'FOF': 'fof' };
+  const cat = document.getElementById('fType').value;
+  rankFt = FT_MAP[cat] || 'all';
   try {
     const d = await api(`/api/rank?sc=${rankSc}&ft=${rankFt}&page=${curPage}&size=50`);
     const list = d.list.map((x, i) => ({ code: x.code, name: x.name, type: 'rank', ret: x.returns, rank: x.rank }));

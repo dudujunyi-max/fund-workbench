@@ -22,11 +22,14 @@
   <div class="panel filter-area">
     <div class="panel-title">🔍 选择基金</div>
     <div class="filter-row">
-      <select id="fType"><option value="">全部类型</option></select>
-      <input id="fQ" placeholder="名称/拼音/代码关键词，如：易方达 / 红利" onkeydown="if(event.key==='Enter')doSearch(1)">
-      <button class="btn-primary" onclick="doSearch(1)">搜索</button>
+      <input id="fQ" placeholder="输入基金代码 / 名称关键词，如：001065 或 红利" onkeydown="if(event.key==='Enter')doSearch(1)">
     </div>
-    <div class="panel-title" style="margin-top:4px">📈 业绩排名窗口</div>
+    <div class="filter-row">
+      <select id="fType"><option value="">全部分类</option></select>
+      <select id="fCompany"><option value="">全部基金公司</option></select>
+      <button class="btn-primary" onclick="doSearch(1)">筛选</button>
+    </div>
+    <div class="panel-title" style="margin-top:4px">📈 按业绩排名排序</div>
     <div class="tabs" id="rankTabs">
       <span class="tab" data-sc="1yzf">近1月</span>
       <span class="tab" data-sc="3yzf">近3月</span>
@@ -34,19 +37,7 @@
       <span class="tab" data-sc="2nzf">近2年</span>
       <span class="tab" data-sc="3nzf">近3年</span>
     </div>
-    <div class="filter-row">
-      <select id="fFt">
-        <option value="all">全部类型</option>
-        <option value="hh">混合型</option>
-        <option value="gp">股票型</option>
-        <option value="zq">债券型</option>
-        <option value="qdii">QDII</option>
-        <option value="zs">指数型</option>
-        <option value="fof">FOF</option>
-      </select>
-      <button class="btn-primary" onclick="doRank(1)">看排名</button>
-    </div>
-    <div id="resList"><div class="res-empty">输入关键词搜索，或选择排名窗口查看。点击「加入」选入右侧列表。</div></div>
+    <div id="resList"><div class="res-empty">输入代码或关键词，选择分类/公司后点「筛选」；或点击上方排名窗口看业绩榜单。点击「加入」选入下方列表。</div></div>
     <div class="res-more"><button class="btn-mini" id="moreBtn" style="display:none" onclick="loadMore()">加载更多</button></div>
   </div>
 
