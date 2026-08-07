@@ -24,18 +24,12 @@ async function init() {
   try {
     await api('/api/me');
   } catch (e) { return; }
-  // 类型下拉
-  try {
-    const d = await api('/api/types');
-    const sel = document.getElementById('fType');
-    sel.innerHTML = '<option value="">全部分类</option>' + d.types.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
-  } catch (e) {}
-  // 基金公司下拉
+  // 基金公司列表（用于多选搜索建议）
   try {
     const d = await api('/api/companies');
-    const sel = document.getElementById('fCompany');
-    sel.innerHTML = '<option value="">全部基金公司</option>' + d.companies.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    _allComps = d.companies || [];
   } catch (e) {}
+  initMultiFilter();
   // 排名 tabs
   document.querySelectorAll('#rankTabs .tab').forEach(t => {
     t.onclick = () => {
@@ -62,44 +56,43 @@ function addCodeRow() {
   row.querySelector('input').focus();
 }
 
-let _joining = false; // 防重入（Enter/失焦双触发）
+// 每个输入框独立防重入（不再全局互斥，多行可同时录入）
 async function joinCode(input) {
-  if (_joining) return;
   const code = (input.value || '').trim();
   if (!code) return;
-  if (!/^\d{6}$/.test(code)) { input.value = ''; alert('请输入 6 位数字基金代码'); return; }
-  _joining = true;
+  if (!/^\d{6}$/.test(code)) { input.value = ''; return; } // 非6位数字：静默清空，不弹窗打断
+  if (input.dataset.joining === '1') return;
+  input.dataset.joining = '1';
   input.disabled = true;
   try {
     const d = await api('/api/fund', { method: 'POST', body: JSON.stringify({ code }) });
-    if (selected.has(code)) { alert('该基金已在已选列表中'); }
-    else { selected.set(code, { code, name: d.name || code, type: d.type || '' }); renderSel(); }
+    if (!selected.has(code)) { selected.set(code, { code, name: d.name || code, type: d.type || '' }); renderSel(); }
     input.value = '';
-  } catch (e) { alert('未找到该基金代码，请检查'); }
+  } catch (e) { input.value = ''; }
   input.disabled = false;
-  _joining = false;
+  delete input.dataset.joining;
   input.focus();
 }
 
-// ===== 搜索（代码/关键词 + 分类 + 公司 组合筛选）=====
+// ===== 搜索（代码/关键词 + 分类多选 + 公司多选 组合筛选）=====
 async function doSearch(page) {
   curMode = 'search'; curPage = page || 1;
   const q = document.getElementById('fQ').value.trim();
-  const cat = document.getElementById('fType').value;
-  const company = document.getElementById('fCompany').value;
+  const cats = [...selCats].join(',');
+  const comps = [...selComps].join(',');
   try {
-    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cat)}&company=${encodeURIComponent(company)}&page=${curPage}&size=30`);
+    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cats)}&company=${encodeURIComponent(comps)}&page=${curPage}&size=30`);
     renderRes(d);
   } catch (e) { showResErr(e.message); }
 }
 
-// ===== 排名（按窗口，沿用当前分类/公司过滤）=====
+// ===== 排名（按窗口；分类多选时映射为全部市场）=====
 async function doRank(page) {
   curMode = 'rank'; curPage = page || 1;
   // rankhandler 大类映射（指数/股票/混合/债券/QDII/FOF；货币与商品不参与涨跌幅排名）
   const FT_MAP = { '指数型': 'zs', '股票型': 'gp', '混合型': 'hh', '债券型': 'zq', 'QDII': 'qdii', 'FOF': 'fof' };
-  const cat = document.getElementById('fType').value;
-  rankFt = FT_MAP[cat] || 'all';
+  const cats = [...selCats];
+  rankFt = cats.length === 1 ? (FT_MAP[cats[0]] || 'all') : 'all';
   try {
     const d = await api(`/api/rank?sc=${rankSc}&ft=${rankFt}&page=${curPage}&size=50`);
     const list = d.list.map((x, i) => ({ code: x.code, name: x.name, type: 'rank', ret: x.returns, rank: x.rank }));
@@ -140,6 +133,48 @@ function toggleSel(code, name, type) {
 }
 function clearSel() { selected.clear(); renderSel(); }
 
+// ===== 多选筛选：分类 chips + 公司搜索 =====
+let selCats = new Set();       // 已选分类
+let selComps = new Set();      // 已选公司（核心词）
+let _allComps = [];            // 全部公司（用于本地搜索建议）
+
+function initMultiFilter() {
+  // 分类 chips 点击切换多选
+  document.querySelectorAll('#catChips .chip').forEach(ch => {
+    ch.onclick = () => {
+      const cat = ch.dataset.cat;
+      if (selCats.has(cat)) { selCats.delete(cat); ch.classList.remove('on'); }
+      else { selCats.add(cat); ch.classList.add('on'); }
+      doSearch(1);
+    };
+  });
+}
+function companySuggest(v) {
+  v = (v || '').trim();
+  const box = document.getElementById('compSuggest');
+  if (!v) { box.innerHTML = ''; return; }
+  const hits = _allComps.filter(c => c.includes(v)).slice(0, 8);
+  if (!hits.length) { box.innerHTML = ''; return; }
+  box.innerHTML = hits.map(c => {
+    const on = selComps.has(c);
+    return `<div class="comp-item ${on ? 'on' : ''}" onclick="pickCompany('${esc(c).replace(/'/g, "\\'")}')">${esc(c)}${on ? ' ✓' : ''}</div>`;
+  }).join('');
+}
+function pickCompany(c) {
+  if (selComps.has(c)) { selComps.delete(c); }
+  else { selComps.add(c); }
+  document.getElementById('fCompany').value = '';
+  document.getElementById('compSuggest').innerHTML = '';
+  renderCompSel();
+  doSearch(1);
+}
+function renderCompSel() {
+  const box = document.getElementById('compSel');
+  box.innerHTML = selComps.size ? [...selComps].map(c =>
+    `<span class="sel-chip">${esc(c)}<span class="x" onclick="pickCompany('${esc(c).replace(/'/g, "\\'")}')">✕</span></span>`).join('')
+    : '';
+}
+
 function renderSel() {
   const box = document.getElementById('selList');
   const cnt = document.getElementById('selCount');
@@ -150,6 +185,12 @@ function renderSel() {
     : '<span class="sel-empty">尚未选择基金</span>';
   btn.textContent = `🎯 生成报告${selected.size ? `（${selected.size} 只）` : ''}`;
   btn.disabled = selected.size === 0;
+  // 同步移动端底部生成栏
+  const btnM = document.getElementById('genBtnM');
+  if (btnM) {
+    btnM.textContent = `🎯 生成报告${selected.size ? `（${selected.size} 只）` : ''}`;
+    btnM.disabled = selected.size === 0;
+  }
 }
 
 // ===== 视图切换：工作台 <-> 报告页 =====

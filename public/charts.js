@@ -60,6 +60,7 @@ function initChart(id) {
 function toggleCard(btn) {
   const detail = btn.nextElementSibling;
   const open = detail.classList.toggle('open');
+  btn.classList.toggle('open', open);
   if (open) {
     const cs = detail.querySelectorAll('canvas');
     for (let i = 0; i < cs.length; i++) initChart(cs[i].id);

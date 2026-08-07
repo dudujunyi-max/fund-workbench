@@ -37,11 +37,24 @@
           <div class="filter-row">
             <input id="fQ" placeholder="名称 / 拼音 / 代码关键词，如：红利" onkeydown="if(event.key==='Enter')doSearch(1)">
           </div>
-          <div class="filter-row">
-            <select id="fType"><option value="">全部分类</option></select>
-            <select id="fCompany"><option value="">全部基金公司</option></select>
-            <button class="btn-primary" onclick="doSearch(1)">筛选</button>
+          <div class="panel-title" style="margin-top:4px">分类（可多选）</div>
+          <div class="tabs" id="catChips">
+            <span class="chip" data-cat="指数型">指数型</span>
+            <span class="chip" data-cat="股票型">股票型</span>
+            <span class="chip" data-cat="混合型">混合型</span>
+            <span class="chip" data-cat="债券型">债券型</span>
+            <span class="chip" data-cat="货币型">货币型</span>
+            <span class="chip" data-cat="QDII">QDII</span>
+            <span class="chip" data-cat="FOF">FOF</span>
+            <span class="chip" data-cat="商品REITs">商品REITs</span>
           </div>
+          <div class="panel-title" style="margin-top:4px">基金公司（可多选）</div>
+          <div class="filter-row">
+            <input id="fCompany" placeholder="输入公司名搜索，如：易方达 / 华夏" onkeyup="companySuggest(this.value)" onkeydown="if(event.key==='Enter')doSearch(1)">
+          </div>
+          <div id="compSuggest" class="comp-suggest"></div>
+          <div id="compSel" class="sel-list" style="margin:6px 0 10px"></div>
+          <button class="btn-primary" onclick="doSearch(1)">筛选</button>
           <div class="panel-title" style="margin-top:4px">📈 按业绩排名排序</div>
           <div class="tabs" id="rankTabs">
             <span class="tab" data-sc="1yzf">近1月</span>
@@ -80,6 +93,11 @@
   </div>
 
   <div class="footer">数据来源：天天基金网 · 业绩/排名截至查询日 · 本工具仅供内部参考，不构成投资建议</div>
+</div>
+
+<!-- 移动端底部固定生成栏 -->
+<div class="mobile-gen">
+  <button class="btn-success" id="genBtnM" onclick="generate()">🎯 生成报告</button>
 </div>
 
 <script src="charts.js"></script>
