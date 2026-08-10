@@ -1,10 +1,22 @@
 // 工作台交互逻辑：登录态、搜索/排名、已选管理、生成配置建议
 const TOKEN_KEY = 'wb_token';
+const SEL_KEY = 'wb_selected';   // 已选组合持久化（记忆上次会话）
 let selected = new Map(); // code -> {code,name,type}
 let curPage = 1, curMode = 'search'; // search | rank
 let rankSc = '1nzf', rankFt = 'all';
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+
+// 已选组合持久化：每次变化写入 localStorage（换设备可用导出/导入迁移）
+function saveSel() {
+  try { localStorage.setItem(SEL_KEY, JSON.stringify([...selected.values()])); } catch (e) {}
+}
+function loadSel() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SEL_KEY) || '[]');
+    if (Array.isArray(arr)) arr.forEach(s => { if (s && s.code) selected.set(s.code, { code: s.code, name: s.name || s.code, type: s.type || '' }); });
+  } catch (e) {}
+}
 
 // 带自动重试的请求封装（网络抖动/服务瞬断自动重试，缓解"无数据"）
 async function api(path, opts = {}, retries = 2) {
@@ -35,6 +47,9 @@ async function init() {
   try {
     await api('/api/me');
   } catch (e) { return; }
+  // 记忆上次已选组合
+  loadSel();
+  if (selected.size) renderSel();
   // 基金公司列表（用于多选搜索建议）
   try {
     const d = await api('/api/companies');
@@ -51,6 +66,19 @@ async function init() {
     };
   });
   doSearch(1);
+}
+
+// ===== 今日要处理条 =====
+function updateTodayBar() {
+  const bar = document.getElementById('todayBar');
+  if (!bar) return;
+  const txt = document.getElementById('todayText');
+  const n = selected.size;
+  if (n) {
+    const md = new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+    txt.textContent = `继续上次组合（${n} 只）· 净值数据实时抓取自天天基金（${md}）`;
+    bar.style.display = 'block';
+  } else { bar.style.display = 'none'; }
 }
 
 // ===== 代码输入：单输入框 + 添加按钮 =====
@@ -152,7 +180,43 @@ function toggleSel(code, name, type) {
   renderSel();
   doSearch(curPage); // 刷新加入按钮状态（轻量）
 }
-function clearSel() { selected.clear(); renderSel(); }
+function clearSel() {
+  if (!selected.size) return;
+  if (!confirm('确定清空全部已选基金？')) return;
+  selected.clear(); renderSel();
+}
+
+// ===== 组合备份：导出 JSON / 导入恢复 =====
+function exportSel() {
+  if (!selected.size) { alert('已选组合为空，无需导出'); return; }
+  const payload = { app: 'fund-workbench', version: 1, exportedAt: new Date().toISOString(), funds: [...selected.values()] };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '基金组合_' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+}
+function importSel(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const arr = Array.isArray(data) ? data : (data.funds || []);
+      if (!arr.length) { alert('导入文件格式不正确'); return; }
+      const ok = arr.filter(s => s && /^\d{6}$/.test(s.code));
+      if (!ok.length) { alert('导入文件中没有有效基金代码'); return; }
+      ok.forEach(s => selected.set(s.code, { code: s.code, name: s.name || s.code, type: s.type || '' }));
+      renderSel();
+      doSearch(1);
+      alert(`已导入 ${ok.length} 只基金`);
+    } catch (e) { alert('导入失败：文件不是有效的 JSON'); }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
 
 // ===== 多选筛选：分类 chips + 公司搜索 + 规模/成立/申购 =====
 let selCats = new Set();       // 已选分类
@@ -234,18 +298,50 @@ function renderSel() {
     btnM.textContent = `🎯 生成报告${selected.size ? `（${selected.size} 只）` : ''}`;
     btnM.disabled = selected.size === 0;
   }
+  saveSel();           // 持久化已选组合
+  updateTodayBar();    // 刷新今日要处理条
 }
 
 // ===== 视图切换：工作台 <-> 报告页 =====
 function showReportView() {
   document.getElementById('wbView').style.display = 'none';
   document.getElementById('reportView').style.display = 'block';
+  setMTab('report');
   window.scrollTo(0, 0);
 }
 function backToWorkbench() {
   document.getElementById('reportView').style.display = 'none';
   document.getElementById('wbView').style.display = 'block';
+  setMTab('work');
   window.scrollTo(0, 0);
+}
+
+// 移动端底部 Tab 切换（工作台 / 报告）
+function mTab(tab) {
+  if (tab === 'report') {
+    const out = document.getElementById('out');
+    if (!out || !out.innerHTML.trim() || out.innerHTML.includes('loading')) { alert('请先点「生成报告」生成配置建议'); return; }
+    showReportView();
+  } else { backToWorkbench(); }
+}
+function setMTab(tab) {
+  const w = document.getElementById('mTabWork'), r = document.getElementById('mTabRep');
+  if (w) w.classList.toggle('on', tab === 'work');
+  if (r) r.classList.toggle('on', tab === 'report');
+}
+
+// 生成进度条（顶部滑动条）
+let _progressEl = null;
+function showProgress() {
+  if (!_progressEl) {
+    _progressEl = document.createElement('div');
+    _progressEl.className = 'gen-progress';
+    document.body.appendChild(_progressEl);
+  }
+  _progressEl.style.display = 'block';
+}
+function hideProgress() {
+  if (_progressEl) _progressEl.style.display = 'none';
 }
 
 // ===== 生成报告（进入报告视图） =====
@@ -255,11 +351,15 @@ async function generate() {
   const out = document.getElementById('out');
   const loading = document.getElementById('loading');
   showReportView();
+  showProgress();
   loading.style.display = 'block';
   out.innerHTML = '';
+  const banner = document.getElementById('reportBanner');
+  if (banner) banner.style.display = 'none';
   try {
     const d = await api('/api/funds', { method: 'POST', body: JSON.stringify({ codes }) });
     loading.style.display = 'none';
+    hideProgress();
     const ok = d.funds.filter(f => f.ok);
     const bad = d.funds.filter(f => !f.ok);
     if (!ok.length) { out.innerHTML = '<div class="res-empty">所有基金获取失败，请检查代码后重试</div>'; return; }
@@ -268,9 +368,15 @@ async function generate() {
     fundsData.forEach(fd => registerCharts(fd));
     out.innerHTML = renderOverview(fundsData) + ok.map(f => renderCard(f.data)).join('') +
       (bad.length ? `<div class="res-empty">以下基金获取失败：${bad.map(b => b.code).join('、')}（请返回重新选择）</div>` : '');
+    // 成功横幅
+    if (banner) {
+      banner.innerHTML = `✅ 报告已生成（${ok.length} 只基金）`;
+      banner.style.display = 'block';
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     loading.style.display = 'none';
+    hideProgress();
     out.innerHTML = `<div class="res-empty">${esc(e.message)}</div>`;
   }
 }

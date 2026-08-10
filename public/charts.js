@@ -83,8 +83,8 @@ function registerCharts(d) {
       labels: st.map(s => s.date),
       datasets: [{
         label: '净资产（亿元）', data: st.map(s => s.value),
-        borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.08)',
-        fill: true, tension: .3, pointRadius: 3, pointBackgroundColor: '#4f46e5'
+        borderColor: '#c7000b', backgroundColor: 'rgba(199,0,11,.08)',
+        fill: true, tension: .3, pointRadius: 3, pointBackgroundColor: '#c7000b'
       }]
     });
   }
@@ -102,9 +102,9 @@ function registerCharts(d) {
     chartsData['nav_' + code] = chartBase({
       labels, peakIdx, troughIdx, mddLabel: mddL,
       datasets: [{
-        label: '单位净值', data: values, borderColor: '#4f46e5',
-        backgroundColor: 'rgba(79,70,229,.06)', fill: true, tension: .25,
-        pointRadius: 0, pointHoverRadius: 4, pointBackgroundColor: '#4f46e5'
+        label: '单位净值', data: values, borderColor: '#c7000b',
+        backgroundColor: 'rgba(199,0,11,.06)', fill: true, tension: .25,
+        pointRadius: 0, pointHoverRadius: 4, pointBackgroundColor: '#c7000b'
       }]
     });
     chartsData['nav_' + code].plugins = ['mddShade'];

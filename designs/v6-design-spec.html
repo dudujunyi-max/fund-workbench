@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>金瓴 · 基金配置工作台 v6 设计规范</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;background:#f4f5f7;color:#1c2333;line-height:1.7;padding:0 0 60px}
+  .hero{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 60%,#4f46e5 130%);color:#fff;padding:52px 40px 44px}
+  .hero h1{font-size:26px;font-weight:600;letter-spacing:1px}
+  .hero .sub{color:#c7d2fe;font-size:14px;margin-top:8px}
+  .hero .tags{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+  .hero .tag{padding:4px 14px;border:1px solid rgba(199,210,254,.4);border-radius:20px;font-size:12px;color:#e0e7ff}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  .sec{background:#fff;border:1px solid #e5e9f0;border-radius:14px;padding:28px 30px;margin-top:22px}
+  .sec h2{font-size:18px;font-weight:600;color:#1e1b4b;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .sec .desc{font-size:13px;color:#64748b;margin-bottom:20px}
+  .sec h3{font-size:14px;font-weight:600;color:#312e81;margin:22px 0 10px}
+  .grid{display:grid;gap:14px}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .swatch{border-radius:10px;overflow:hidden;border:1px solid #e5e9f0}
+  .swatch .c{height:64px}
+  .swatch .i{padding:8px 12px;font-size:12px;color:#475569}
+  .swatch .i b{display:block;font-size:12px;color:#1c2333}
+  .token{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#f8fafc;padding:2px 7px;border-radius:6px;color:#4f46e5}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th{background:#f1f5f9;text-align:left;padding:8px 12px;font-weight:600;color:#475569;font-size:12px}
+  td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+  .demo{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .btn{padding:10px 22px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer}
+  .btn-p{background:#4f46e5;color:#fff;box-shadow:0 3px 8px rgba(79,70,229,.25)}
+  .btn-s{background:#fff;border:1px solid #e5e9f0;color:#1c2333}
+  .btn-d{background:#fff;border:1px solid #fecdd3;color:#e11d48}
+  .btn-g{background:#059669;color:#fff}
+  .chip{display:inline-block;padding:5px 14px;border-radius:20px;font-size:13px;background:#fff;border:1px solid #e5e9f0;margin:3px}
+  .chip.on{background:#eef2ff;border-color:#4f46e5;color:#4338ca;font-weight:600}
+  .tabs-d{display:flex;gap:4px;border-bottom:1px solid #e5e9f0;margin-bottom:14px}
+  .tabs-d span{padding:8px 16px;font-size:13px;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs-d span.on{color:#4f46e5;font-weight:600;border-bottom-color:#4f46e5}
+  .card-d{border:1px solid #e5e9f0;border-radius:14px;padding:16px 18px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 2px 8px rgba(16,24,40,.05)}
+  .up{color:#e11d48;font-weight:700;font-variant-numeric:tabular-nums}
+  .down{color:#16a34a;font-weight:700;font-variant-numeric:tabular-nums}
+  .l1{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+  .feedback{display:grid;gap:14px}
+  .fb{border:1px solid #e5e9f0;border-radius:10px;padding:14px 16px;font-size:13px}
+  .fb .t{font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .skel{display:flex;gap:8px;padding:8px 0}
+  .skel div{height:12px;border-radius:6px;background:#eef0f4;animation:pl 1.2s ease-in-out infinite}
+  @keyframes pl{0%,100%{opacity:.5}50%{opacity:1}}
+  .progress{height:4px;background:#eef2ff;border-radius:4px;overflow:hidden;position:relative}
+  .progress::after{content:'';position:absolute;left:0;top:0;bottom:0;width:40%;background:#4f46e5;border-radius:4px;animation:pr 1.4s ease-in-out infinite}
+  @keyframes pr{0%{left:-40%}100%{left:100%}}
+  .mt{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .phone{border:2px solid #e5e9f0;border-radius:24px;padding:12px;width:220px;margin:0 auto;background:#f8fafc}
+  .phone .s{background:#fff;border-radius:14px;padding:10px;margin-bottom:8px;font-size:12px}
+  .phone .tab{display:flex;background:#fff;border:1px solid #e5e9f0;border-radius:12px;overflow:hidden}
+  .phone .tab div{flex:1;text-align:center;padding:8px 0;font-size:12px;color:#64748b}
+  .phone .tab div.on{color:#4f46e5;font-weight:600;background:#eef2ff}
+  .note{background:#f8fafc;border-left:3px solid #4f46e5;padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;margin-top:10px}
+  .icon-demo{display:flex;gap:10px;flex-wrap:wrap}
+  .icon-demo .ic{width:44px;height:44px;border:1px solid #e5e9f0;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#4f46e5}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>金瓴 · 基金配置工作台</h1>
+  <div class="sub">v6 设计规范 · 专业基金数据工作台 · 面向客户经理的选基与配置决策工具</div>
+  <div class="tags"><span class="tag">主题鲜明</span><span class="tag">交互贴合习惯</span><span class="tag">完整反馈闭环</span><span class="tag">双端适配</span></div>
+</div>
+
+<div class="wrap">
+
+<!-- 1 主题 -->
+<div class="sec">
+  <h2>01 · 设计主题「金瓴」</h2>
+  <div class="desc">"金瓴"寓意金融领域的高标准容器——专业、可信、克制、数据驱动。视觉语言：深靛蓝品牌色 + 紫色主行动 + 红涨绿跌语义色，卡片化浅色内容区，营造"银行级专业工具"的气质，与工行客户经理的工作语境匹配。</div>
+  <div class="grid g3">
+    <div class="card-d"><b style="font-size:14px">专业可信</b><p style="font-size:13px;color:#64748b;margin-top:4px">深色品牌顶栏 + 克制的色彩使用，拒绝花哨</p></div>
+    <div class="card-d"><b style="font-size:14px">数据优先</b><p style="font-size:13px;color:#64748b;margin-top:4px">数字用等宽对齐、红绿语义一眼识别涨跌</p></div>
+    <div class="card-d"><b style="font-size:14px">反馈即时</b><p style="font-size:13px;color:#64748b;margin-top:4px">每个操作都有加载/成功/错误/空状态反馈</p></div>
+  </div>
+</div>
+
+<!-- 2 色彩 -->
+<div class="sec">
+  <h2>02 · 色彩系统</h2>
+  <div class="desc">品牌色用于行动与聚焦；语义色严格对应金融含义（中国习惯：红涨绿跌）；中性色阶搭建页面层次。</div>
+  <h3>品牌色（Indigo）</h3>
+  <div class="grid g4">
+    <div class="swatch"><div class="c" style="background:#1e1b4b"></div><div class="i"><b>品牌深 #1E1B4B</b>顶栏/深色区</div></div>
+    <div class="swatch"><div class="c" style="background:#4f46e5"></div><div class="i"><b>主色 #4F46E5</b>主按钮/选中态</div></div>
+    <div class="swatch"><div class="c" style="background:#4338ca"></div><div class="i"><b>主色深 #4338CA</b>hover</div></div>
+    <div class="swatch"><div class="c" style="background:#eef2ff"></div><div class="i"><b>主色浅 #EEF2FF</b>浅底/选中底</div></div>
+  </div>
+  <h3>语义色（红涨绿跌 · 中国习惯）</h3>
+  <div class="grid g4">
+    <div class="swatch"><div class="c" style="background:#e11d48"></div><div class="i"><b>涨 #E11D48</b>上涨/收益</div></div>
+    <div class="swatch"><div class="c" style="background:#fce7f3"></div><div class="i"><b>涨浅 #FCE7F3</b>涨标签底</div></div>
+    <div class="swatch"><div class="c" style="background:#16a34a"></div><div class="i"><b>跌 #16A34A</b>下跌/亏损</div></div>
+    <div class="swatch"><div class="c" style="background:#dcfce7"></div><div class="i"><b>跌浅 #DCFCE7</b>跌标签底</div></div>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="swatch"><div class="c" style="background:#d97706"></div><div class="i"><b>警示 #D97706</b>新进/提醒</div></div>
+    <div class="swatch"><div class="c" style="background:#059669"></div><div class="i"><b>成功 #059669</b>生成/完成</div></div>
+    <div class="swatch"><div class="c" style="background:#dc2626"></div><div class="i"><b>危险 #DC2626</b>删除/失败</div></div>
+  </div>
+  <h3>中性色阶</h3>
+  <table>
+    <tr><th>Token</th><th>值</th><th>用途</th></tr>
+    <tr><td><span class="token">--bg</span></td><td>#F4F5F7</td><td>页面背景（浅灰）</td></tr>
+    <tr><td><span class="token">--card</span></td><td>#FFFFFF</td><td>卡片背景</td></tr>
+    <tr><td><span class="token">--border</span></td><td>#E5E9F0</td><td>边框</td></tr>
+    <tr><td><span class="token">--text</span></td><td>#1C2333</td><td>主文字</td></tr>
+    <tr><td><span class="token">--text-2</span></td><td>#64748B</td><td>次级文字</td></tr>
+    <tr><td><span class="token">--text-3</span></td><td>#94A3B8</td><td>占位/注释</td></tr>
+  </table>
+</div>
+
+<!-- 3 字体 -->
+<div class="sec">
+  <h2>03 · 字体与字号</h2>
+  <div class="desc">系统字体栈保证零依赖与跨端一致；数字一律等宽（tabular-nums）保证表格/列表对齐；字号阶梯 6 级。</div>
+  <div class="grid g2">
+    <div>
+      <h3>字体栈</h3>
+      <div class="note">-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif</div>
+      <div class="note" style="border-left-color:#16a34a">数字：font-variant-numeric: tabular-nums（收益率/规模/排名等所有数字）</div>
+    </div>
+    <div>
+      <h3>字号阶梯</h3>
+      <table>
+        <tr><th>级别</th><th>字号</th><th>用途</th></tr>
+        <tr><td><span class="token">--fs-11</span></td><td>11px</td><td>角标/表格小注</td></tr>
+        <tr><td><span class="token">--fs-12</span></td><td>12px</td><td>注释/辅助</td></tr>
+        <tr><td><span class="token">--fs-13</span></td><td>13px</td><td>正文/列表</td></tr>
+        <tr><td><span class="token">--fs-14</span></td><td>14px</td><td>强调/按钮</td></tr>
+        <tr><td><span class="token">--fs-16</span></td><td>16px</td><td>卡片标题/输入</td></tr>
+        <tr><td><span class="token">--fs-20/24</span></td><td>20/24px</td><td>页面标题/大数字</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 4 布局 -->
+<div class="sec">
+  <h2>04 · 布局架构</h2>
+  <div class="desc">自上而下：深色品牌顶栏 → 「今日要处理」置顶条 → 左栏选基金 / 右栏已选组合 → 报告视图独立呈现。</div>
+  <table>
+    <tr><th>分区</th><th>内容</th><th>交互要点</th></tr>
+    <tr><td><b>顶栏（深色）</b></td><td>品牌 logo + 名称 · 数据更新时间 · 导出 PDF / 退出</td><td>固定顶部；移动端保留品牌+退出</td></tr>
+    <tr><td><b>今日要处理</b></td><td>继续上次组合（N只）· 净值更新至 · 一键生成入口</td><td>浅蓝底卡片；一键回到上次会话状态</td></tr>
+    <tr><td><b>左栏 · 选基金</b></td><td>代码输入 · 分类/公司/规模/成立/申购 6 维筛选 · 排名窗口 · 结果列表</td><td>chips 多选即时筛选；排名 tab 下划线式</td></tr>
+    <tr><td><b>右栏 · 已选</b></td><td>已选 chips · 导出/导入组合 · 生成报告主按钮</td><td>sticky 固定；导出备份防丢失</td></tr>
+    <tr><td><b>报告视图</b></td><td>组合总览（环形分布）+ 基金卡片（业绩/持仓/费率/视角）</td><td>独立整页，顶部返回工作台</td></tr>
+  </table>
+</div>
+
+<!-- 5 组件 -->
+<div class="sec">
+  <h2>05 · 组件规范</h2>
+  <div class="desc">每个组件定义默认/悬停/点击/禁用四种状态。</div>
+  <h3>按钮</h3>
+  <div class="demo">
+    <button class="btn btn-p">生成报告</button>
+    <button class="btn btn-g">筛选</button>
+    <button class="btn btn-s">导出组合</button>
+    <button class="btn btn-d">清空</button>
+  </div>
+  <table style="margin-top:12px">
+    <tr><th>类型</th><th>样式</th><th>hover</th><th>禁用</th></tr>
+    <tr><td>主操作（生成/筛选）</td><td>主色 #4F46E5 白字 + 轻投影</td><td>#4338CA + 上浮 1px</td><td>50% 透明</td></tr>
+    <tr><td>成功（次要确认）</td><td>#059669 白字</td><td>#047857</td><td>50% 透明</td></tr>
+    <tr><td>次级（导出/更多）</td><td>白底 1px 边框</td><td>#F1F5F9 底</td><td>50%</td></tr>
+    <tr><td>危险（清空/删除）</td><td>白底 粉色边框红字</td><td>#FEE2E2 底</td><td>50%</td></tr>
+  </table>
+  <h3>筛选 chips（多选）</h3>
+  <div class="demo">
+    <span class="chip">混合型</span>
+    <span class="chip on">债券型</span>
+    <span class="chip on">QDII</span>
+    <span class="chip">&lt;1亿</span>
+    <span class="chip on">5-20亿</span>
+  </div>
+  <p style="font-size:13px;color:#64748b;margin-top:8px">默认：白底灰边；选中：主色浅底 + 主色边框 + 深紫字。点击即时触发筛选，不额外点"应用"。</p>
+  <h3>排名 tabs（下划线式）</h3>
+  <div class="tabs-d">
+    <span>近1月</span><span>近3月</span><span class="on">近1年</span><span>近2年</span><span>近3年</span>
+  </div>
+  <p style="font-size:13px;color:#64748b">选中：主色字 + 2px 主色下划线；切换有 0.18s 滑动过渡。</p>
+  <h3>结果列表</h3>
+  <div class="card-d" style="max-width:520px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-bottom:1px solid #f1f5f9">
+      <div><div style="font-size:13px;font-weight:600">浦银安盛景气优选混合A <span style="color:#94a3b8;font-weight:400;font-size:11px">017114</span></div><div style="font-size:11px;color:#94a3b8">近1月收益率 · 第1名</div></div>
+      <div class="up">+24.12%</div>
+      <button class="btn" style="padding:5px 14px;font-size:12px;background:#eef2ff;color:#4338ca">加入</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px">
+      <div><div style="font-size:13px;font-weight:600">某债基 <span style="color:#94a3b8;font-weight:400;font-size:11px">001065</span></div><div style="font-size:11px;color:#94a3b8">近3月收益率 · 第12名</div></div>
+      <div class="down">-0.23%</div>
+      <button class="btn" style="padding:5px 14px;font-size:12px;background:#dcfce7;color:#166534">已选 ✓</button>
+    </div>
+  </div>
+  <p style="font-size:13px;color:#64748b;margin-top:8px">行 hover 浅灰高亮；收益率右侧等宽大号红绿；"加入/已选"按钮状态色区分。</p>
+</div>
+
+<!-- 6 图表 -->
+<div class="sec">
+  <h2>06 · 图形与图表规范</h2>
+  <div class="desc">图表选型遵循"信息密度与可读性"原则，全部数据图表配语义色与标注。</div>
+  <table>
+    <tr><th>数据</th><th>图形</th><th>规范</th></tr>
+    <tr><td>净值走势</td><td>折线图（紫 #4F46E5）</td><td>全历史 + 最大回撤区间红色区域高亮 + ▼ 文字标注</td></tr>
+    <tr><td>规模趋势</td><td>面积折线（紫渐变浅）</td><td>8 期季度，末端数据点圆点</td></tr>
+    <tr><td>组合资产分布（新增）</td><td>环形图 Donut</td><td>核心/卫星/机会用 蓝/紫/琥珀 三段，中心显示总数</td></tr>
+    <tr><td>持仓拆解</td><td>表格 + 标签</td><td>增持红 / 减持绿 / 新进琥珀 / 维持灰</td></tr>
+    <tr><td>业绩对比</td><td>表格（收益率红绿）</td><td>收益与同类平均同列对比，四分位色块</td></tr>
+    <tr><td>图标</td><td>内联 SVG 线性图标</td><td>1.5px 描边、圆角端点；顶栏/分区标题使用，正文装饰少用</td></tr>
+  </table>
+</div>
+
+<!-- 7 反馈 -->
+<div class="sec">
+  <h2>07 · 交互反馈闭环</h2>
+  <div class="desc">所有操作必须有反馈：加载、成功、失败、空状态、悬停，五类闭环。</div>
+  <div class="feedback">
+    <div class="fb"><div class="t">⏳ 加载态</div>生成报告时：顶部 4px 主色进度条（无限滑动）+ 结果区骨架屏（灰条闪烁）；筛选/排名切换：列表区轻量转圈</div>
+    <div class="fb"><div class="t">✅ 成功态</div>生成完成：报告视图淡入 + 顶部横幅"报告已生成（N 只基金）"；加入基金：按钮瞬时变"已选 ✓"绿色</div>
+    <div class="fb"><div class="t">⚠️ 错误态</div>内联红字提示 + 「重试」按钮（请求自动重试 2 次后仍失败才展示）；登录错误红框提示</div>
+    <div class="fb"><div class="t">🕳️ 空状态</div>结果区：SVG 插画 + 引导文案（"输入代码或选择筛选条件开始选基"）；已选区空：灰字引导</div>
+    <div class="fb"><div class="t">🖱️ 悬停/按压</div>按钮 hover 深一档 + 上浮；卡片 hover 阴影加深；chips hover 边框加深；列表行 hover 浅灰高亮；按压有 0.1s 收缩反馈</div>
+  </div>
+  <div class="skel" style="margin-top:14px"><div style="width:30%"></div><div style="width:45%"></div><div style="width:20%"></div></div>
+  <div class="progress" style="margin-top:10px"></div>
+</div>
+
+<!-- 8 移动端 -->
+<div class="sec">
+  <h2>08 · 移动端适配</h2>
+  <div class="desc">客户经理手机高频使用，移动端按"底部导航 + 单列堆叠 + 大触控"设计。</div>
+  <div class="mt">
+    <div>
+      <table>
+        <tr><th>规范</th><th>要求</th></tr>
+        <tr><td>布局</td><td>双栏 → 单列堆叠，已选栏置顶（order -1）</td></tr>
+        <tr><td>导航</td><td>底部 Tab：工作台 / 报告（新增）</td></tr>
+        <tr><td>生成入口</td><td>底部固定"生成报告"大按钮（含已选数）</td></tr>
+        <tr><td>触控</td><td>按钮 ≥44px；输入框字号 ≥16px（防 iOS 缩放）</td></tr>
+        <tr><td>表格</td><td>窄屏横向滚动或转卡片</td></tr>
+        <tr><td>安全区</td><td>padding-bottom: env(safe-area-inset-bottom)</td></tr>
+      </table>
+    </div>
+    <div class="phone">
+      <div class="s" style="font-weight:600">🏦 基金配置工作台</div>
+      <div class="s" style="background:#eef2ff">继续上次组合（3 只）</div>
+      <div class="s">输入代码 [添加]</div>
+      <div class="s" style="display:flex;justify-content:space-between"><span>易方达供给改革混合</span><span class="up">+3.32%</span></div>
+      <div class="s" style="display:flex;justify-content:space-between"><span>某 QDII 债基</span><span class="down">-0.23%</span></div>
+      <div class="tab"><div class="on">工作台</div><div>报告</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 9 图标 -->
+<div class="sec">
+  <h2>09 · 图标规范</h2>
+  <div class="desc">内联 SVG，1.5px 描边线性风格，44px 触控容器，与品牌色一致。</div>
+  <div class="icon-demo">
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 12h16"/><path d="M13 5l7 7-7 7"/></svg></div>
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+  </div>
+  <p style="font-size:13px;color:#64748b;margin-top:8px">搜索 / 业绩 / 生成 / 时钟……关键操作图标化，减少 emoji 依赖，提升专业度。</p>
+</div>
+
+<div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:30px">金瓴设计规范 v6 · 待确认后进入实现阶段</div>
+
+</div>
+</body>
+</html>
