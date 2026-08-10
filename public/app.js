@@ -115,8 +115,9 @@ async function doSearch(page) {
   const scales = [...selScales].join(',');
   const ages = [...selAges].join(',');
   const buyable = [...selBuy][0] || '';
+  const currency = [...selCur][0] || '';
   try {
-    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cats)}&company=${encodeURIComponent(comps)}&scales=${encodeURIComponent(scales)}&ages=${encodeURIComponent(ages)}&buyable=${encodeURIComponent(buyable)}&page=${curPage}&size=30`);
+    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cats)}&company=${encodeURIComponent(comps)}&scales=${encodeURIComponent(scales)}&ages=${encodeURIComponent(ages)}&buyable=${encodeURIComponent(buyable)}&currency=${encodeURIComponent(currency)}&page=${curPage}&size=30`);
     renderRes(d);
   } catch (e) { showResErr(e.message); }
 }
@@ -224,6 +225,7 @@ let selComps = new Set();      // 已选公司（核心词）
 let selScales = new Set();     // 已选规模分档
 let selAges = new Set();       // 已选成立时长分档
 let selBuy = new Set();        // 已选申购状态
+let selCur = new Set();        // 已选购买币种
 let _allComps = [];            // 全部公司（用于本地搜索建议）
 
 function toggleMore() {
@@ -244,8 +246,8 @@ function initMultiFilter() {
       doSearch(1);
     };
   });
-  // 规模/成立时长/申购状态 chips（多选）
-  const groups = { scale: selScales, age: selAges, buy: selBuy };
+  // 规模/成立时长/申购状态/购买币种 chips（多选）
+  const groups = { scale: selScales, age: selAges, buy: selBuy, cur: selCur };
   document.querySelectorAll('#moreFilter .tabs[data-g] .chip').forEach(ch => {
     ch.onclick = () => {
       const set = groups[ch.parentElement.dataset.g];
