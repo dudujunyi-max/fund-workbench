@@ -130,6 +130,7 @@ function filterQuery() {
 async function doSearch(page) {
   curMode = 'search'; curPage = page || 1;
   const sc = hasFilter() ? rankSc : ''; // 有筛选 → 按当前排名窗口收益率排序
+  if (sc) showResLoading('正在计算收益率排序…');
   try {
     const d = await api(`/api/search?${filterQuery()}&sc=${sc}&page=${curPage}&size=30`);
     if (sc) {
@@ -148,6 +149,7 @@ async function doRank(page) {
   const scLabel = SC_LABELS[rankSc] || '近1年';
   if (hasFilter()) {
     // 筛选范围内按所选窗口收益率排序（与筛选联动）
+    showResLoading('正在计算收益率排序…');
     try {
       const d = await api(`/api/search?${filterQuery()}&sc=${rankSc}&page=${curPage}&size=30`);
       const list = d.list.map(x => ({ code: x.code, name: x.name, type: x.type, ret: x.ret, rank: x.rank, scLabel }));
@@ -161,6 +163,10 @@ async function doRank(page) {
       renderRes({ total: d.allNum, list, isRank: true });
     } catch (e) { showResErr(e.message); }
   }
+}
+
+function showResLoading(msg) {
+  document.getElementById('resList').innerHTML = `<div class="res-empty" style="padding:22px 0">⏳ ${esc(msg)}</div>`;
 }
 
 function showResErr(msg) {
