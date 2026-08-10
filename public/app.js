@@ -107,8 +107,16 @@ async function addByCode() {
 }
 
 // ===== 搜索（关键词 + 分类/公司/规模/成立/申购 多选组合筛选）=====
-async function doSearch(page) {
-  curMode = 'search'; curPage = page || 1;
+const SC_LABELS = { '1yzf': '近1月', '3yzf': '近3月', '1nzf': '近1年', '2nzf': '近2年', '3nzf': '近3年' };
+
+// 是否处于"筛选"状态（有任一筛选条件）——有筛选时排名窗口在筛选范围内生效
+function hasFilter() {
+  const q = document.getElementById('fQ').value.trim();
+  return !!(q || selCats.size || selComps.size || selScales.size || selAges.size || selBuy.size || selCur.size);
+}
+
+// 构造筛选查询串（不含分页）
+function filterQuery() {
   const q = document.getElementById('fQ').value.trim();
   const cats = [...selCats].join(',');
   const comps = [...selComps].join(',');
@@ -116,25 +124,43 @@ async function doSearch(page) {
   const ages = [...selAges].join(',');
   const buyable = [...selBuy][0] || '';
   const currency = [...selCur][0] || '';
+  return `q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cats)}&company=${encodeURIComponent(comps)}&scales=${encodeURIComponent(scales)}&ages=${encodeURIComponent(ages)}&buyable=${encodeURIComponent(buyable)}&currency=${encodeURIComponent(currency)}`;
+}
+
+async function doSearch(page) {
+  curMode = 'search'; curPage = page || 1;
+  const sc = hasFilter() ? rankSc : ''; // 有筛选 → 按当前排名窗口收益率排序
   try {
-    const d = await api(`/api/search?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cats)}&company=${encodeURIComponent(comps)}&scales=${encodeURIComponent(scales)}&ages=${encodeURIComponent(ages)}&buyable=${encodeURIComponent(buyable)}&currency=${encodeURIComponent(currency)}&page=${curPage}&size=30`);
-    renderRes(d);
+    const d = await api(`/api/search?${filterQuery()}&sc=${sc}&page=${curPage}&size=30`);
+    if (sc) {
+      const scLabel = SC_LABELS[rankSc] || '近1年';
+      const list = d.list.map(x => ({ code: x.code, name: x.name, type: x.type, ret: x.ret, rank: x.rank, scLabel }));
+      renderRes({ total: d.total, list, isRank: true, tooMany: d.tooMany });
+    } else {
+      renderRes(d);
+    }
   } catch (e) { showResErr(e.message); }
 }
 
-// ===== 排名（按窗口；所选区间收益率直接展示在列表）=====
+// ===== 排名（按窗口；有筛选→筛选范围内排序，无筛选→全市场排名）=====
 async function doRank(page) {
   curMode = 'rank'; curPage = page || 1;
-  // rankhandler 大类映射（指数/股票/混合/债券/QDII/FOF；货币与商品不参与涨跌幅排名）
-  const FT_MAP = { '指数型': 'zs', '股票型': 'gp', '混合型': 'hh', '债券型': 'zq', 'QDII': 'qdii', 'FOF': 'fof' };
-  const cats = [...selCats];
-  rankFt = cats.length === 1 ? (FT_MAP[cats[0]] || 'all') : 'all';
-  const scLabel = ({ '1yzf': '近1月', '3yzf': '近3月', '1nzf': '近1年', '2nzf': '近2年', '3nzf': '近3年' })[rankSc] || '近1年';
-  try {
-    const d = await api(`/api/rank?sc=${rankSc}&ft=${rankFt}&page=${curPage}&size=50`);
-    const list = d.list.map((x, i) => ({ code: x.code, name: x.name, type: 'rank', ret: x.returns, rank: x.rank, scLabel }));
-    renderRes({ total: d.allNum, list, isRank: true });
-  } catch (e) { showResErr(e.message); }
+  const scLabel = SC_LABELS[rankSc] || '近1年';
+  if (hasFilter()) {
+    // 筛选范围内按所选窗口收益率排序（与筛选联动）
+    try {
+      const d = await api(`/api/search?${filterQuery()}&sc=${rankSc}&page=${curPage}&size=30`);
+      const list = d.list.map(x => ({ code: x.code, name: x.name, type: x.type, ret: x.ret, rank: x.rank, scLabel }));
+      renderRes({ total: d.total, list, isRank: true, tooMany: d.tooMany });
+    } catch (e) { showResErr(e.message); }
+  } else {
+    // 无筛选：全市场排名
+    try {
+      const d = await api(`/api/rank?sc=${rankSc}&ft=all&page=${curPage}&size=50`);
+      const list = d.list.map((x, i) => ({ code: x.code, name: x.name, type: 'rank', ret: x.returns, rank: x.rank, scLabel }));
+      renderRes({ total: d.allNum, list, isRank: true });
+    } catch (e) { showResErr(e.message); }
+  }
 }
 
 function showResErr(msg) {
@@ -145,31 +171,31 @@ function renderRes(d) {
   const box = document.getElementById('resList');
   const moreBtn = document.getElementById('moreBtn');
   if (!d.list.length) { box.innerHTML = '<div class="res-empty">未找到匹配基金</div>'; moreBtn.style.display = 'none'; return; }
-  box.innerHTML = d.list.map(x => {
+  const tooManyHtml = d.tooMany ? `<div class="res-warn">共 ${d.total} 只，结果较多暂按默认顺序浏览；可再添加公司/规模/币种等条件后按收益率排名</div>` : '';
+  box.innerHTML = tooManyHtml + d.list.map(x => {
     const on = selected.has(x.code);
-    const isRank = !!d.isRank;
-    // 排名模式：所选区间收益率醒目展示（红涨绿跌，中国习惯）
+    // 收益率（筛选联动后所有列表都可能带）
+    const hasRet = x.ret != null && x.ret !== '' && x.ret !== '—';
     let retHtml = '';
-    let metaHtml = '';
-    if (isRank) {
-      const rv = String(x.ret == null ? '' : x.ret);
-      const up = rv !== '' && rv !== '—' && !rv.startsWith('-');
-      const down = rv !== '' && rv !== '—' && rv.startsWith('-');
-      if (rv && rv !== '—') retHtml = `<div class="res-ret ${up ? 'up' : down ? 'down' : ''}">${up ? '+' : ''}${esc(rv)}%</div>`;
-      metaHtml = `${x.scLabel || '区间'}收益率 · 第${x.rank}名`;
-    } else {
-      metaHtml = esc(x.type);
+    if (hasRet) {
+      const rv = String(x.ret);
+      const up = !rv.startsWith('-');
+      retHtml = `<div class="res-ret ${up ? 'up' : 'down'}">${up ? '+' : ''}${esc(rv)}%</div>`;
+    } else if (x.scLabel) {
+      retHtml = '<div class="res-ret muted">—</div>';
     }
+    // meta：窗口收益率 + 排名，或类型
+    const metaHtml = x.scLabel ? `${x.scLabel}收益率${x.rank ? ` · 第${x.rank}名` : ''}` : esc(x.type);
     return `<div class="res-item">
       <div class="info">
         <div class="name">${esc(x.name)}<span class="res-code">${x.code}</span></div>
         <div class="meta">${metaHtml}</div>
       </div>
       ${retHtml}
-      <button class="add ${on ? 'on' : ''}" onclick="toggleSel('${x.code}','${esc(x.name).replace(/'/g, "\\'")}','${esc(isRank ? '' : x.type)}')">${on ? '已选 ✓' : '加入'}</button>
+      <button class="add ${on ? 'on' : ''}" onclick="toggleSel('${x.code}','${esc(x.name).replace(/'/g, "\\'")}','${esc(x.scLabel ? '' : x.type)}')">${on ? '已选 ✓' : '加入'}</button>
     </div>`;
   }).join('');
-  moreBtn.style.display = d.total > curPage * 50 ? 'block' : 'none';
+  moreBtn.style.display = d.total > curPage * (d.isRank ? 50 : 30) ? 'block' : 'none';
 }
 
 function loadMore() { curPage++; curMode === 'rank' ? doRank(curPage) : doSearch(curPage); }
